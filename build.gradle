@@ -1,0 +1,43 @@
+buildscript {
+    repositories {
+        mavenLocal()
+        maven { 
+			url "http://localhost:8081/nexus/content/groups/public"
+        }
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.0.1.RELEASE")
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'spring-boot'
+
+jar {
+    baseName = 'magneto'
+    version =  '0.1.0'
+}
+
+repositories {
+	mavenLocal()
+	maven {
+		url "http://localhost:8081/nexus/content/groups/public"
+	}
+}
+
+dependencies {
+    compile("org.springframework.boot:spring-boot-starter-web")
+    compile("com.fasterxml.jackson.core:jackson-databind")
+	compile("org.hawklithm.netty:nettyService:1.0-SNAPSHOT")
+	compile("hessian:hessian:3.0.1")
+	compile("org.apache.zookeeper:zookeeper:3.4.6")
+	compile("com.h2database:h2")
+	compile("com.google.code.gson:gson:2.2.4")
+    testCompile("junit:junit")
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.11'
+}
