@@ -2,6 +2,11 @@ package org.hawklithm.magneto.dataobject;
 
 import java.util.Date;
 
+/**
+ * 服务器与客户端之间数据传输的格式
+ * @author bluehawky
+ *
+ */
 public class RPCCallInfoDO {
 	private String callerAuth;
 	private boolean aquireForce;
@@ -9,6 +14,7 @@ public class RPCCallInfoDO {
 	private String version;
 	private String interfaceName;
 	private Date lastVersionTime;
+	private String Extention;
 
 	/**
 	 * @return the aquireForce
@@ -81,5 +87,17 @@ public class RPCCallInfoDO {
 	 */
 	public void setLastVersionTime(Date lastVersionTime) {
 		this.lastVersionTime = lastVersionTime;
+	}
+	/**
+	 * @return the extention
+	 */
+	public String getExtention() {
+		return Extention;
+	}
+	/**
+	 * @param extention the extention to set
+	 */
+	public void setExtention(String extention) {
+		Extention = extention;
 	}
 }

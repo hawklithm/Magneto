@@ -3,8 +3,8 @@ package org.hawklithm.magneto.server;
 import java.io.IOException;
 
 import org.hawklithm.magneto.dataobject.RPCCallInfoDO;
+import org.hawklithm.magneto.dataobject.RPCRegistInfoDO;
 import org.hawklithm.magneto.dataobject.RemoteCallCommunicationProtocol;
-import org.hawklithm.magneto.exception.ServiceDataBrokenException;
 import org.hawklithm.magneto.global.MagnetoConstant;
 import org.hawklithm.magneto.serviceDAO.ServiceGetter;
 import org.hawklithm.magneto.utils.HessianUtils;
@@ -25,6 +25,7 @@ public class Server extends NettyServer {
 			@Override
 			public void onMessageReceived(String msg, Channel channel) {
 				RemoteCallCommunicationProtocol protocol=Jsoner.fromJson(msg, RemoteCallCommunicationProtocol.class);
+				protocol.countPlus();
 				switch(protocol.getOperateType()){
 				case MagnetoConstant.RPC_OPERATION_TYPE_REGIST:
 					// 注册RPC
@@ -43,14 +44,19 @@ public class Server extends NettyServer {
 					// 调用rpc
 					RPCCallInfoDO callInfo=Jsoner.fromJson(protocol.getMessage(),RPCCallInfoDO.class);
 					try {
+						RPCRegistInfoDO registInfo=getter.getServiceInfo(callInfo.getInterfaceName());
 						//TODO 检查权限
-						String result=Jsoner.toJson(getter.getServiceInfo(callInfo));
+						/**
+						 * 重组数据并将调用信息回传给客户端
+						 */
+						callInfo.setAddress(registInfo.getProviderAddress());
+						callInfo.setLastVersionTime(registInfo.getTime());
+						protocol.setMessage(Jsoner.toJson(callInfo));
+						String result=Jsoner.toJson(protocol);
 						protocol.setMessage(result);
 						if (result!=null){
 							sendMessage(Jsoner.toJson(protocol),channel);
 						}
-					} catch (ServiceDataBrokenException e) {
-						e.printStackTrace();
 					} catch (ChannelMustNotBeNullException e) {
 						e.printStackTrace();
 					}

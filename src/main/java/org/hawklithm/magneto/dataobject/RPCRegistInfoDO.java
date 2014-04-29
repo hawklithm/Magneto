@@ -1,5 +1,10 @@
 package org.hawklithm.magneto.dataobject;
 
+/**
+ * 插入到缓存中的数据格式
+ * @author bluehawky
+ *
+ */
 public class RPCRegistInfoDO extends ZooNodeInfoDO{
 	private String interfaceName;
 	

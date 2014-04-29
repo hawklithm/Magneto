@@ -2,6 +2,11 @@ package org.hawklithm.magneto.dataobject;
 
 import java.util.Date;
 
+/**
+ * 从 zookeeper中取出的数据
+ * @author bluehawky
+ *
+ */
 public class ZooNodeInfoDO {
 	private Date time;
 	private String providerAddress;
