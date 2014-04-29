@@ -4,6 +4,7 @@ import java.io.UnsupportedEncodingException;
 
 import org.hawklithm.magneto.buffer.BufferHandler;
 import org.hawklithm.magneto.dataobject.RPCCallInfoDO;
+import org.hawklithm.magneto.dataobject.RPCRegistInfoDO;
 import org.hawklithm.magneto.dataobject.ZooNodeInfoDO;
 import org.hawklithm.magneto.exception.ServiceDataBrokenException;
 import org.hawklithm.magneto.utils.Jsoner;
@@ -25,8 +26,11 @@ public class ServiceGetter {
 		}
 	}
 	
-	public ZooNodeInfoDO getServiceInfo(RPCCallInfoDO info) throws ServiceDataBrokenException{
-		return getServiceInfo(info.getInterfaceName());
+	public RPCRegistInfoDO getServiceInfo(RPCCallInfoDO info) throws ServiceDataBrokenException{
+		ZooNodeInfoDO zooNodeInfo= getServiceInfo(info.getInterfaceName());
+		RPCRegistInfoDO registInfo=new RPCRegistInfoDO(zooNodeInfo);
+		registInfo.setInterfaceName(info.getInterfaceName());
+		return registInfo;
 	}
 
 	/**

@@ -1,6 +1,6 @@
 package org.hawklithm.magneto.buffer;
 
-public interface BufferHandler {
-	void store(String key,byte[] value);
-	byte[] getValue(String key);
+public interface BufferHandler<T,V> {
+	void store(T key,V value);
+	V getValue(T key);
 }

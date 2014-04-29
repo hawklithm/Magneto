@@ -5,12 +5,17 @@ import java.net.UnknownHostException;
 
 import org.hawklithm.magneto.buffer.BufferHandler;
 import org.hawklithm.magneto.dataobject.RPCCallInfoDO;
+import org.hawklithm.magneto.dataobject.RPCRegistInfoDO;
 import org.hawklithm.magneto.dataobject.RemoteCallCommunicationProtocol;
 import org.hawklithm.magneto.global.MagnetoConstant;
 import org.hawklithm.magneto.utils.Jsoner;
 import org.hawklithm.netty.client.NettyClient;
 import org.hawklithm.netty.exception.ChannelMustNotBeNullException;
 import org.hawklithm.netty.handler.NettyHandler;
+import org.hawklithm.shadowsong.dataobject.WardenMessage;
+import org.hawklithm.shadowsong.pusher.IMessagePusher;
+import org.hawklithm.shadowsong.register.IRegisterManager;
+import org.hawklithm.shadowsong.warden.Warden;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
@@ -21,6 +26,8 @@ public class Client extends NettyClient{
 	
 	private boolean aquireForce=false;
 	private String callerAuthString="";
+	private IRegisterManager registerManager;
+	private IMessagePusher<WardenMessage> messagePusher;
 
 	@Autowired @Qualifier("bufferHandler")
 	private BufferHandler bufferHandler;
@@ -40,9 +47,12 @@ public class Client extends NettyClient{
 			@Override
 			public void onMessageReceived(String msg, Channel ch) {
 				RemoteCallCommunicationProtocol protocol=Jsoner.fromJson(msg, RemoteCallCommunicationProtocol.class);
-				switch(protocol.getCount()){
-				case 2:
-					
+				switch(protocol.getOperateType()){
+				case MagnetoConstant.RPC_OPERATION_TYPE_CALL:
+					RPCRegistInfoDO registInfo=Jsoner.fromJson(protocol.getMessage(),RPCRegistInfoDO.class);
+					messagePusher.push(new WardenMessage(registInfo.getInterfaceName(),MagnetoConstant.RPC_OPERATION_TYPE_CALL+protocol.getCount(),registInfo));
+					break;
+				case MagnetoConstant.RPC_OPERATION_TYPE_REGIST:
 					break;
 				}
 			}
@@ -77,6 +87,14 @@ public class Client extends NettyClient{
 			protocol.setMessage(Jsoner.toJson(infoDO));
 			protocol.setOperateType(MagnetoConstant.RPC_OPERATION_TYPE_CALL);
 			sendMessage(Jsoner.toJson(protocol));
+			registerManager.regist(new Warden(false, 1, infoDO.getInterfaceName(), MagnetoConstant.RPC_OPERATION_TYPE_CALL+2){
+
+				@Override
+				public void asynchronizedProcess(Object message) {
+					
+				}
+				
+			});
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		} catch (ChannelMustNotBeNullException e) {
@@ -84,10 +102,32 @@ public class Client extends NettyClient{
 		}
 	}
 
-	public void callServiceBack(String msg){
-		RPCCallInfoDO info=Jsoner.fromJson(msg, RPCCallInfoDO.class);
-		bufferHandler.getValue(info.getInterfaceName());
+	public void callServiceBack(RPCRegistInfoDO msg){
+		bufferHandler.getValue(msg.getInterfaceName());
 	}
-	
+	/**
+	 * @return the registerManager
+	 */
+	public IRegisterManager getRegisterManager() {
+		return registerManager;
+	}
+	/**
+	 * @param registerManager the registerManager to set
+	 */
+	public void setRegisterManager(IRegisterManager registerManager) {
+		this.registerManager = registerManager;
+	}
+	/**
+	 * @return the messagePusher
+	 */
+	public IMessagePusher<WardenMessage> getMessagePusher() {
+		return messagePusher;
+	}
+	/**
+	 * @param messagePusher the messagePusher to set
+	 */
+	public void setMessagePusher(IMessagePusher<WardenMessage> messagePusher) {
+		this.messagePusher = messagePusher;
+	}
 
 }
