@@ -40,9 +40,10 @@ public class ServiceGetter {
 			 */
 			RPCInstanceInfoDO instanceInfo=getServiceInstance(info.getInterfaceName());
 		}
-		RPCRegistInfoDO registInfo=new RPCRegistInfoDO(zooNodeInfo);
-		registInfo.setInterfaceName(info.getInterfaceName());
-		return registInfo;
+//		RPCRegistInfoDO registInfo=new RPCRegistInfoDO(zooNodeInfo);
+//		registInfo.setInterfaceName(info.getInterfaceName());
+//		return registInfo;
+		return null;
 	}
 
 	/**

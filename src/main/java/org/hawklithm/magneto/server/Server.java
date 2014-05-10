@@ -1,6 +1,7 @@
 package org.hawklithm.magneto.server;
 
 import java.io.IOException;
+import java.net.SocketAddress;
 
 import org.hawklithm.magneto.dataobject.RPCCallInfoDO;
 import org.hawklithm.magneto.dataobject.RPCRegistInfoDO;
@@ -10,21 +11,20 @@ import org.hawklithm.magneto.serviceDAO.ServiceGetter;
 import org.hawklithm.magneto.utils.HessianUtils;
 import org.hawklithm.magneto.utils.Jsoner;
 import org.hawklithm.netty.exception.ChannelMustNotBeNullException;
-import org.hawklithm.netty.handler.NettyHandler;
-import org.hawklithm.netty.server.NettyServer;
-import org.jboss.netty.channel.Channel;
+import org.hawklithm.netty.handler.impl.TcpNettyHandler;
+import org.hawklithm.netty.server.TcpNettyServer;
 
-public class Server extends NettyServer {
+public class Server extends TcpNettyServer {
 	
 	private ServiceGetter getter;
 
 	public Server(int port) {
 		super(port);
-		setNettyHandler(new NettyHandler(){
+		setNettyHandler(new TcpNettyHandler(){
 
 			@Override
-			public void onMessageReceived(String msg, Channel channel) {
-				RemoteCallCommunicationProtocol protocol=Jsoner.fromJson(msg, RemoteCallCommunicationProtocol.class);
+			public String onMessageReceived(String message, SocketAddress  remoteAddress){
+				RemoteCallCommunicationProtocol protocol=Jsoner.fromJson(message, RemoteCallCommunicationProtocol.class);
 				protocol.countPlus();
 				switch(protocol.getOperateType()){
 				case MagnetoConstant.RPC_OPERATION_TYPE_REGIST:
@@ -33,9 +33,7 @@ public class Server extends NettyServer {
 					//TODO 检查权限
 					try {
 						protocol.setMessage(new String(HessianUtils.serialize(getter.getConnector())));
-						sendMessage(Jsoner.toJson(protocol),channel);
-					} catch (ChannelMustNotBeNullException e1) {
-						e1.printStackTrace();
+						return Jsoner.toJson(protocol);
 					} catch (IOException e1) {
 						e1.printStackTrace();
 					}
@@ -43,25 +41,22 @@ public class Server extends NettyServer {
 				case MagnetoConstant.RPC_OPERATION_TYPE_CALL:
 					// 调用rpc
 					RPCCallInfoDO callInfo=Jsoner.fromJson(protocol.getMessage(),RPCCallInfoDO.class);
-					try {
-						RPCRegistInfoDO registInfo=getter.getServiceInfo(callInfo.getInterfaceName());
-						//TODO 检查权限
-						/**
-						 * 重组数据并将调用信息回传给客户端
-						 */
-						callInfo.setAddress(registInfo.getProviderAddress());
-						callInfo.setLastVersionTime(registInfo.getTime());
-						protocol.setMessage(Jsoner.toJson(callInfo));
-						String result=Jsoner.toJson(protocol);
-						protocol.setMessage(result);
-						if (result!=null){
-							sendMessage(Jsoner.toJson(protocol),channel);
-						}
-					} catch (ChannelMustNotBeNullException e) {
-						e.printStackTrace();
+					RPCRegistInfoDO registInfo=getter.getServiceInfo(callInfo.getInterfaceName());
+					//TODO 检查权限
+					/**
+					 * 重组数据并将调用信息回传给客户端
+					 */
+					callInfo.setAddress(registInfo.getProviderAddress());
+					callInfo.setLastVersionTime(registInfo.getTime());
+					protocol.setMessage(Jsoner.toJson(callInfo));
+					String result=Jsoner.toJson(protocol);
+					protocol.setMessage(result);
+					if (result!=null){
+						return Jsoner.toJson(protocol);
 					}
 					break;
 				}
+				return null;
 			}
 			
 		});
