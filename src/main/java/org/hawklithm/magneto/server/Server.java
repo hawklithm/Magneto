@@ -28,10 +28,9 @@ public class Server extends TcpNettyServer {
 				switch(protocol.getOperateType()){
 				case MagnetoConstant.RPC_OPERATION_TYPE_REGIST:
 					// 注册RPC
-//					RPCRegistInfoDO registInfo=Jsoner.fromJson(protocol.getMessage(), RPCRegistInfoDO.class);
-					//TODO 检查权限
+					//TODO 从protocol.getMessage里面检查权限
 					try {
-						protocol.setMessage(new String(HessianUtils.serialize(getter.getConnector())));
+						protocol.setMessage(Jsoner.toJson(HessianUtils.serialize(getter.getConnector())));
 						return Jsoner.toJson(protocol);
 					} catch (IOException e1) {
 						e1.printStackTrace();

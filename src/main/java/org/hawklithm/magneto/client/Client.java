@@ -5,6 +5,7 @@ import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 
+import org.apache.zookeeper.ZooKeeper;
 import org.hawklithm.h2db.dataobject.RPCInstanceInfoDO;
 import org.hawklithm.magneto.callback.InstanceCallBack;
 import org.hawklithm.magneto.dataobject.RPCCallInfoDO;
@@ -14,6 +15,7 @@ import org.hawklithm.magneto.serviceDAO.ServiceGetter;
 import org.hawklithm.magneto.utils.HessianUtils;
 import org.hawklithm.magneto.utils.Jsoner;
 import org.hawklithm.magneto.utils.RemoteCallCommunicationProtocolFactory;
+import org.hawklithm.magneto.zookeeper.ZookeeperConnector;
 import org.hawklithm.netty.client.TcpNettyClient;
 import org.hawklithm.netty.client.UdpNettyClient;
 import org.hawklithm.netty.exception.ChannelMustNotBeNullException;
@@ -39,6 +41,7 @@ public class Client {
 	private UdpNettyClient udpClient;
 	private UdpNettyServer udpServer;
 	private RemoteCallCommunicationProtocolFactory protocolFactory=new RemoteCallCommunicationProtocolFactory();
+	private ZookeeperConnector connector=null;
 
 	
 
@@ -91,6 +94,14 @@ public class Client {
 					messagePusher.push(new WardenMessage(instanceInfo.getInterfaceName(), MagnetoConstant.RPC_OPERATION_TYPE_CALL+RemoteCallCommunicationProtocolFactory.REQUEST_RPC_INSTANCE_ANSWER, instanceInfo));
 					break;
 				case MagnetoConstant.RPC_OPERATION_TYPE_REGIST:
+					byte[] bytes=Jsoner.fromJson(protocol.getMessage(), byte[].class);
+					try {
+						Object object=HessianUtils.deserialize(bytes);
+						messagePusher.push(new WardenMessage("*",MagnetoConstant.RPC_OPERATION_TYPE_REGIST,object));
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 					break;
 				}
 				return null;
@@ -120,8 +131,35 @@ public class Client {
 	
 	
 	
-	public void registService(){
-		
+	public void registService(RPCInstanceInfoDO instance) throws IOException{
+		protocolFactory.setOperateRpcRegist();
+		RemoteCallCommunicationProtocol protocol =protocolFactory.getProtocol("");
+		if (connector == null) {
+			try {
+				tcpClient.sendMessage(Jsoner.toJson(protocol));
+				registerManager.regist(new Warden(false,1,"*",MagnetoConstant.RPC_OPERATION_TYPE_REGIST){
+
+					@Override
+					public void asynchronizedProcess(Object message) {
+						connector=(ZookeeperConnector) message;
+						registServiceBack(connector);
+					}
+					
+				});
+			} catch (ChannelMustNotBeNullException e) {
+				e.printStackTrace();
+			}
+		}else{
+			registServiceBack(connector);
+		}
+	}
+	/**
+	 * regist service through connect
+	 * @param connect
+	 */
+	public void registServiceBack(ZookeeperConnector connector){
+		//TODO 结局zookeeper buffer不一致的问题,见zookeeper listener
+//		connector.supplyServiceToZookeeper(zooAddress, serviceAddress, serviceName);
 	}
 	
 	public void callService(String interfaceName,String version,final InstanceCallBack callBack){
