@@ -1,11 +1,11 @@
 package org.hawklithm.magneto.serviceDAO;
 
+import org.hawklithm.h2db.dataobject.RPCInstanceInfoDO;
+import org.hawklithm.h2db.dataobject.RPCRegistInfoDO;
 import org.hawklithm.magneto.buffer.BufferHandler;
 import org.hawklithm.magneto.dataobject.RPCCallInfoDO;
-import org.hawklithm.magneto.dataobject.RPCInstanceInfoDO;
-import org.hawklithm.magneto.dataobject.RPCRegistInfoDO;
-import org.hawklithm.magneto.dataobject.ZooNodeInfoDO;
 import org.hawklithm.magneto.exception.ServiceDataBrokenException;
+import org.hawklithm.magneto.utils.Appender;
 import org.hawklithm.magneto.zookeeper.ZookeeperConnectorImpl;
 import org.hawklithm.netty.handler.NettyHandler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,28 +21,31 @@ public class ServiceGetter {
 	
 	private NettyHandler nettyHandler;
 	
-	public RPCRegistInfoDO getServiceInfo(String serviceName){
-		return rpcInfoBufferHandler.getValue(serviceName);
+	public RPCRegistInfoDO getServiceInfo(String serviceName,String version){
+		return rpcInfoBufferHandler.getValue(Appender.getCombine(serviceName,";",version));
 	}
-	public RPCInstanceInfoDO getServiceInstance(String serviceName){
-		return rpcInstanceBufferHandler.getValue(serviceName);
+	/**
+	 * get the rpc instance from buffer
+	 * @param serviceName
+	 * @param version
+	 * @return
+	 */
+	public RPCInstanceInfoDO getServiceInstance(String serviceName,String version){
+		return rpcInstanceBufferHandler.getValue(Appender.getCombine(serviceName,";",version));
 	}
 	
 	public RPCRegistInfoDO getService(RPCCallInfoDO info) throws ServiceDataBrokenException{
-		RPCRegistInfoDO rpcRegistInfo = getServiceInfo(info.getInterfaceName());
+		RPCRegistInfoDO rpcRegistInfo = getServiceInfo(info.getInterfaceName(),info.getVersion());
 		if (rpcRegistInfo.getTime().before(info.getLastVersionTime())){
 			/**
 			 * 缓存中的时间点小于接收到的信息的版本时间说明需要更新缓存
 			 */
 		}else {
-			/**
+			/**H2dbRpcBuffer buffer=new H2dbRpcBuffer();
 			 * 缓存中的信息还是最新的，直接取用即可
 			 */
-			RPCInstanceInfoDO instanceInfo=getServiceInstance(info.getInterfaceName());
+			RPCInstanceInfoDO instanceInfo=getServiceInstance(info.getInterfaceName(),info.getVersion());
 		}
-//		RPCRegistInfoDO registInfo=new RPCRegistInfoDO(zooNodeInfo);
-//		registInfo.setInterfaceName(info.getInterfaceName());
-//		return registInfo;
 		return null;
 	}
 

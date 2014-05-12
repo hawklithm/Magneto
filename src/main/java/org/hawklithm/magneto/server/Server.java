@@ -3,14 +3,13 @@ package org.hawklithm.magneto.server;
 import java.io.IOException;
 import java.net.SocketAddress;
 
+import org.hawklithm.h2db.dataobject.RPCRegistInfoDO;
 import org.hawklithm.magneto.dataobject.RPCCallInfoDO;
-import org.hawklithm.magneto.dataobject.RPCRegistInfoDO;
 import org.hawklithm.magneto.dataobject.RemoteCallCommunicationProtocol;
 import org.hawklithm.magneto.global.MagnetoConstant;
 import org.hawklithm.magneto.serviceDAO.ServiceGetter;
 import org.hawklithm.magneto.utils.HessianUtils;
 import org.hawklithm.magneto.utils.Jsoner;
-import org.hawklithm.netty.exception.ChannelMustNotBeNullException;
 import org.hawklithm.netty.handler.impl.TcpNettyHandler;
 import org.hawklithm.netty.server.TcpNettyServer;
 
@@ -41,7 +40,7 @@ public class Server extends TcpNettyServer {
 				case MagnetoConstant.RPC_OPERATION_TYPE_CALL:
 					// 调用rpc
 					RPCCallInfoDO callInfo=Jsoner.fromJson(protocol.getMessage(),RPCCallInfoDO.class);
-					RPCRegistInfoDO registInfo=getter.getServiceInfo(callInfo.getInterfaceName());
+					RPCRegistInfoDO registInfo=getter.getServiceInfo(callInfo.getInterfaceName(),callInfo.getVersion());
 					//TODO 检查权限
 					/**
 					 * 重组数据并将调用信息回传给客户端

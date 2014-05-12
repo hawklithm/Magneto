@@ -5,9 +5,9 @@ import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 
+import org.hawklithm.h2db.dataobject.RPCInstanceInfoDO;
 import org.hawklithm.magneto.callback.InstanceCallBack;
 import org.hawklithm.magneto.dataobject.RPCCallInfoDO;
-import org.hawklithm.magneto.dataobject.RPCInstanceInfoDO;
 import org.hawklithm.magneto.dataobject.RemoteCallCommunicationProtocol;
 import org.hawklithm.magneto.global.MagnetoConstant;
 import org.hawklithm.magneto.serviceDAO.ServiceGetter;
@@ -29,7 +29,6 @@ import org.jboss.netty.channel.ChannelStateEvent;
 
 public class Client {
 	
-	private static String CLIENT_RPC_CALL_MODULE="client_rpc_call_module";
 	
 	private boolean aquireForce=false;
 	private String callerAuthString="";
@@ -105,7 +104,7 @@ public class Client {
 				RemoteCallCommunicationProtocol protocol=Jsoner.fromJson(message, RemoteCallCommunicationProtocol.class);
 				if (protocol.getOperateType().equals(MagnetoConstant.RPC_OPERATION_TYPE_CALL)){
 					RPCCallInfoDO rpcCallInfo=Jsoner.fromJson(protocol.getMessage(), RPCCallInfoDO.class);
-					RPCInstanceInfoDO instanceInfo=serviceGetter.getServiceInstance(rpcCallInfo.getInterfaceName()+rpcCallInfo.getVersion());
+					RPCInstanceInfoDO instanceInfo=serviceGetter.getServiceInstance(rpcCallInfo.getInterfaceName(),rpcCallInfo.getVersion());
 					return Jsoner.toJson(instanceInfo);
 				}
 				return null;
