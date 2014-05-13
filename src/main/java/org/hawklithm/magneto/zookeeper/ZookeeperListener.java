@@ -1,5 +1,6 @@
 package org.hawklithm.magneto.zookeeper;
 
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 import org.apache.zookeeper.KeeperException;
@@ -7,7 +8,10 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
+import org.hawklithm.h2db.dataobject.RPCRegistInfoDO;
 import org.hawklithm.magneto.buffer.BufferHandler;
+import org.hawklithm.magneto.utils.Jsoner;
+import org.hawklithm.magneto.utils.ZookeeperUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -16,7 +20,7 @@ public class ZookeeperListener {
 	private ZooKeeper zk;
 	private Stat stat = new Stat();
 	@Autowired @Qualifier("bufferHandler")
-	private BufferHandler bufferHandler;
+	private BufferHandler<String,RPCRegistInfoDO> bufferHandler;
 
 	/**
 	 * 将监听器连至zookeeper
@@ -47,13 +51,20 @@ public class ZookeeperListener {
 		travelAllNodes("/"+rpcRootGroupNode,bufferHandler);
 	}
 	
-	private void travelAllNodes(String rootAddress,BufferHandler handler){
+	private void travelAllNodes(String rootAddress,BufferHandler<String,RPCRegistInfoDO> handler){
 		try {
 			List<String> subNodes=zk.getChildren("/"+rootAddress, true);
 			if (subNodes.size()==0){
 				System.out.println("[zookeeper get the leaf node]"+rootAddress);
 				byte[] data = zk.getData("/" + rootAddress , false, stat);
-				handler.store(rootAddress, data);
+				RPCRegistInfoDO zookeeperNodeInfo;
+				try {
+					zookeeperNodeInfo = Jsoner.fromJson(new String(data,"utf-8"), RPCRegistInfoDO.class);
+					zookeeperNodeInfo.setInterfaceName(zookeeperNodeInfo.getInterfaceName());
+					handler.store(zookeeperNodeInfo.getInterfaceName()+";"+zookeeperNodeInfo.getVersion(), zookeeperNodeInfo);
+				} catch (UnsupportedEncodingException e) {
+					e.printStackTrace();
+				}
 				return;
 			}
 			for (String node:subNodes){

@@ -5,7 +5,6 @@ import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 
-import org.apache.zookeeper.ZooKeeper;
 import org.hawklithm.h2db.dataobject.RPCInstanceInfoDO;
 import org.hawklithm.magneto.callback.InstanceCallBack;
 import org.hawklithm.magneto.dataobject.RPCCallInfoDO;

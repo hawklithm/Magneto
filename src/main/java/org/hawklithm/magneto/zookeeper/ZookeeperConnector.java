@@ -1,6 +1,7 @@
 package org.hawklithm.magneto.zookeeper;
 
-public interface ZookeeperConnector {
-	public void supplyServiceToZookeeper(String zooAddress,String serviceAddress,String serviceName) throws Exception;
+import org.hawklithm.h2db.dataobject.RPCRegistInfoDO;
 
+public interface ZookeeperConnector {
+	public void supplyServiceToZookeeper(String zooAddress,RPCRegistInfoDO serviceInfo) throws Exception;
 }
