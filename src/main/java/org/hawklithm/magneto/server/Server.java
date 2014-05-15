@@ -3,20 +3,29 @@ package org.hawklithm.magneto.server;
 import java.io.IOException;
 import java.net.SocketAddress;
 
+import org.apache.zookeeper.KeeperException;
+import org.hawklithm.h2db.dataobject.RPCInstanceInfoDO;
 import org.hawklithm.h2db.dataobject.RPCRegistInfoDO;
+import org.hawklithm.magneto.buffer.BufferHandler;
 import org.hawklithm.magneto.dataobject.RPCCallInfoDO;
 import org.hawklithm.magneto.dataobject.RemoteCallCommunicationProtocol;
+import org.hawklithm.magneto.exception.ServiceDataBrokenException;
 import org.hawklithm.magneto.global.MagnetoConstant;
-import org.hawklithm.magneto.serviceDAO.ServiceGetter;
+import org.hawklithm.magneto.utils.Appender;
 import org.hawklithm.magneto.utils.HessianUtils;
 import org.hawklithm.magneto.utils.Jsoner;
+import org.hawklithm.magneto.zookeeper.ZookeeperConnectorImpl;
+import org.hawklithm.netty.handler.NettyHandler;
 import org.hawklithm.netty.handler.impl.TcpNettyHandler;
 import org.hawklithm.netty.server.TcpNettyServer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 public class Server extends TcpNettyServer {
 	
-	private ServiceGetter getter;
-
+	@Autowired @Qualifier("connector")
+	private ZookeeperConnectorImpl connector;
+	
 	public Server(int port) {
 		super(port);
 		setNettyHandler(new TcpNettyHandler(){
@@ -30,7 +39,7 @@ public class Server extends TcpNettyServer {
 					// 注册RPC
 					//TODO 从protocol.getMessage里面检查权限
 					try {
-						protocol.setMessage(Jsoner.toJson(HessianUtils.serialize(getter.getConnector())));
+						protocol.setMessage(Jsoner.toJson(HessianUtils.serialize(connector)));
 						return Jsoner.toJson(protocol);
 					} catch (IOException e1) {
 						e1.printStackTrace();
@@ -39,7 +48,7 @@ public class Server extends TcpNettyServer {
 				case MagnetoConstant.RPC_OPERATION_TYPE_CALL:
 					// 调用rpc
 					RPCCallInfoDO callInfo=Jsoner.fromJson(protocol.getMessage(),RPCCallInfoDO.class);
-					RPCRegistInfoDO registInfo=getter.getServiceInfo(callInfo.getInterfaceName(),callInfo.getVersion());
+					RPCRegistInfoDO registInfo=getServiceInfo(callInfo.getInterfaceName(),callInfo.getVersion());
 					//TODO 检查权限
 					/**
 					 * 重组数据并将调用信息回传给客户端
@@ -59,20 +68,38 @@ public class Server extends TcpNettyServer {
 			
 		});
 	}
-
+	
 	/**
-	 * @return the getter
+	 * 
+	 * @param serviceName
+	 * @param version
+	 * @return
 	 */
-	public ServiceGetter getGetter() {
-		return getter;
-	}
-
-	/**
-	 * @param getter the getter to set
-	 */
-	public void setGetter(ServiceGetter getter) {
-		this.getter = getter;
+	public RPCRegistInfoDO getServiceInfo(String serviceName,String version){
+		try {
+			return connector.getService(serviceName+"/"+version);
+		} catch (KeeperException | InterruptedException e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 	
+	
+
+
+	/**
+	 * @return the connector
+	 */
+	public ZookeeperConnectorImpl getConnector() {
+		return connector;
+	}
+
+	/**
+	 * @param connector the connector to set
+	 */
+	public void setConnector(ZookeeperConnectorImpl connector) {
+		this.connector = connector;
+	}
+
 
 }

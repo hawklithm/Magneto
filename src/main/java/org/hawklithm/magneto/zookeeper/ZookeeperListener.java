@@ -1,6 +1,7 @@
 package org.hawklithm.magneto.zookeeper;
 
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.zookeeper.KeeperException;
@@ -43,12 +44,29 @@ public class ZookeeperListener {
 						break;
 					case NodeChildrenChanged:
 						System.out.println(path+"'s children was changed");
+						try {
+							refreshWatcher(path, zk);
+						} catch (KeeperException | InterruptedException e) {
+							e.printStackTrace();
+						}
 						break;
 					}
 				}
 			}
 		});
 		travelAllNodes("/"+rpcRootGroupNode,bufferHandler);
+	}
+	private void refreshWatcher(String rootPath,ZooKeeper zk) throws KeeperException, InterruptedException{
+		List<String> newServerList = new ArrayList<String>();
+
+		List<String> subList = zk.getChildren(rootPath, true);
+		for (String subNode : subList) {
+			String  path=rootPath+"/"+subNode;
+			if (zk.exists(path, true)!=null){
+			zk.getData(path, true, stat);
+			zk.getChildren(path, true);
+			}
+		}
 	}
 	
 	private void travelAllNodes(String rootAddress,BufferHandler<String,RPCRegistInfoDO> handler){
