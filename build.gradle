@@ -35,6 +35,7 @@ dependencies {
 	compile("org.apache.zookeeper:zookeeper:3.4.6")
 	compile("com.google.code.gson:gson:2.2.4")
 	compile("org.hawklithm.h2db:H2dbBuffer:1.0-SNAPSHOT")
+	compile("org.hawklithm.shadowsong:shadowsong:1.0-SNAPSHOT")
     testCompile("junit:junit")
 }
 
